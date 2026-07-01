@@ -10,9 +10,9 @@ import Foundation
 
 /// A Struct for storing information about geographic locations.
 struct Location: Codable, Equatable, Identifiable {
-    let id: UUID
-    let name: String
-    let description: String
+    var id: UUID
+    var name: String
+    var description: String
     var latitude: Double
     var longitude: Double
     
