@@ -26,6 +26,7 @@ struct ContentView: View {
     )
     
     @State private var locations = [Location]()
+    @State private var selectedPlace: Location?
     
     var body: some View {
         /// Creates an interactive map, allowing the user to see existing locations as markers and add new locations by tapping on the map.
@@ -44,6 +45,9 @@ struct ContentView: View {
                             .frame(width: 44, height: 44)
                             .background(.white)
                             .clipShape(.circle)
+                            .onLongPressGesture(minimumDuration: 0.1){
+                                selectedPlace = location
+                            }
                     }
                 }
             }
@@ -60,6 +64,15 @@ struct ContentView: View {
                     )
                     
                     locations.append(newLocation)
+                }
+            }
+            .sheet(item: $selectedPlace) { location in
+                EditView(location: location) { newLocation in
+                    /// Tries to find the position (index) of the location object within the locations array.
+                    /// Using the 'firstIndex(of: )' method searches for the first element in the array that is equal to location. If it finds one, it returns its position as an Int.
+                    if let index = locations.firstIndex(of: location) {
+                        locations[index] = newLocation
+                    }
                 }
             }
         }
