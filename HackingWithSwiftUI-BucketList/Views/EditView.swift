@@ -8,6 +8,10 @@
 import SwiftUI
 
 struct EditView: View {
+    enum LoadingState {
+        case loading, loaded, failed
+    }
+    
     @Environment(\.dismiss) var dismiss
     
     var location: Location
@@ -16,6 +20,9 @@ struct EditView: View {
     @State private var description: String
     
     var onSave: (Location) -> Void
+    
+    @State private var loadingState: LoadingState = .loading
+    @State private var pages = [Page]()
     
     /// Lets the view display and edit the name and description of a location and ensures the fields are tracked with SwiftUI's reactive state system.
     init(location: Location, onSave: @escaping (Location) -> Void) {
@@ -35,8 +42,24 @@ struct EditView: View {
                     TextField("Place Name", text: $name)
                     TextField("Place Description", text: $description)
                 }
+                
+                Section("Nearby...") {
+                    switch loadingState {
+                    case .loading:
+                        Text("Loading...")
+                    case .loaded:
+                        ForEach(pages, id: \.pageid) { page in
+                            Text("\(Text(page.title).font(.headline)): \(Text("Page Description here").italic())")
+                        }
+                    case .failed:
+                        Text("Please try again later...")
+                    }
+                }
             }
             .navigationTitle("Place Details")
+            .task {
+                await fetchNearbyPlaces()
+            }
             .toolbar {
                 Button("Save") {
                     var newLocation = location
@@ -49,6 +72,24 @@ struct EditView: View {
                     dismiss()
                 }
             }
+        }
+    }
+    
+    private func fetchNearbyPlaces() async {
+        let urlString = "https://en.wikipedia.org/w/api.php?ggscoord=\(location.latitude)%7C\(location.longitude)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
+        
+        guard let url = URL(string: urlString) else {
+            print("Bad URL\(urlString)")
+            return
+        }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let items = try JSONDecoder().decode(Result.self, from: data)
+            pages = items.query.pages.values.sorted { $0.title < $1.title }
+            loadingState = .loaded
+        } catch {
+            loadingState = .failed
         }
     }
 }
