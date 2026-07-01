@@ -33,13 +33,18 @@ struct ContentView: View {
         MapReader { proxy in
             Map(initialPosition: startPosition) {
                 ForEach(locations) { location in
-                    Marker(
+                    /// Annotation is a view used in MapKit to display custom markers (map annotations).
+                    Annotation(
                         location.name,
-                        coordinate: CLLocationCoordinate2D(
-                            latitude: location.latitude,
-                            longitude: location.longitude
-                        )
-                    )
+                        coordinate: location.coordinate
+                    ) {
+                        Image(systemName: "star.circle")
+                            .resizable()
+                            .foregroundStyle(.red)
+                            .frame(width: 44, height: 44)
+                            .background(.white)
+                            .clipShape(.circle)
+                    }
                 }
             }
             /// The onTapGesture returns a CGPoint which is converted to CLLocationCoordinate2D from the current view.
