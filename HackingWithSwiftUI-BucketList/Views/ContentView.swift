@@ -9,6 +9,8 @@ import MapKit
 import SwiftUI
 
 struct ContentView: View {
+    @State private var viewModel = ViewModel()
+    
     /// Defines the initial camera position for a map view, which determines what part of the world is visible when the map first appears.
     let startPosition = MapCameraPosition.region(
         MKCoordinateRegion(
@@ -25,15 +27,12 @@ struct ContentView: View {
         )
     )
     
-    @State private var locations = [Location]()
-    @State private var selectedPlace: Location?
-    
     var body: some View {
         /// Creates an interactive map, allowing the user to see existing locations as markers and add new locations by tapping on the map.
         /// MapReader is a SwiftUI view that provides programmatic access to map-related actions and coordinate conversions.
         MapReader { proxy in
             Map(initialPosition: startPosition) {
-                ForEach(locations) { location in
+                ForEach(viewModel.locations) { location in
                     /// Annotation is a view used in MapKit to display custom markers (map annotations).
                     Annotation(
                         location.name,
@@ -46,33 +45,20 @@ struct ContentView: View {
                             .background(.white)
                             .clipShape(.circle)
                             .onLongPressGesture(minimumDuration: 0.1){
-                                selectedPlace = location
+                                viewModel.selectedPlace = location
                             }
                     }
                 }
             }
             /// The onTapGesture returns a CGPoint which is converted to CLLocationCoordinate2D from the current view.
-            /// The CLLocationCoordinate2D latitude and longitude are then appended to the locations array.
             .onTapGesture { position in
                 if let coordinate = proxy.convert(position, from: .local) {
-                    let newLocation = Location(
-                        id: UUID(),
-                        name: "New Location",
-                        description: "",
-                        latitude: coordinate.latitude,
-                        longitude: coordinate.longitude
-                    )
-                    
-                    locations.append(newLocation)
+                    viewModel.addLocation(at: coordinate)
                 }
             }
-            .sheet(item: $selectedPlace) { location in
-                EditView(location: location) { newLocation in
-                    /// Tries to find the position (index) of the location object within the locations array.
-                    /// Using the 'firstIndex(of: )' method searches for the first element in the array that is equal to location. If it finds one, it returns its position as an Int.
-                    if let index = locations.firstIndex(of: location) {
-                        locations[index] = newLocation
-                    }
+            .sheet(item: $viewModel.selectedPlace) { location in
+                EditView(location: location) {
+                    viewModel.update(location: $0)
                 }
             }
         }
