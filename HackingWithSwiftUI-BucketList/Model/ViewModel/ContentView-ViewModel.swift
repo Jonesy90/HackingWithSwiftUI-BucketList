@@ -70,10 +70,13 @@ extension ContentView {
             }
         }
         
+        /// Designed to use biometrics (FaceID or TouchID) to authenticate the user before allowing access.
         func authenticate() {
+            /// LAContext is an object for LocalAuthentication framework. It includes all the details needed for evaluating authentication policies.
             let context = LAContext()
             var error: NSError?
             
+            /// Checks if the device used is capable for biometric authentication.
             if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
                 let reason = "Please authenticate to unlock your places."
                 
