@@ -7,6 +7,7 @@
 
 import CoreLocation
 import Foundation
+import LocalAuthentication
 import MapKit
 
 /// Defines a class for the SwiftUI ContentView. The ViewModel manages a list of location objects, allowing users to update, add, and persist locations (in the documentsDirectory).
@@ -19,6 +20,8 @@ extension ContentView {
         var selectedPlace: Location?
         /// The file location of where the data about locations will be stored on disk.
         let savePath = URL.documentsDirectory.appending(path: "SavedPlaces")
+        
+        var isUnlocked = false
         
         /// As soon as the ViewModel is created, it tries to load previous saved data from disk. If no data is available, it will start with an empty array.
         init() {
@@ -64,6 +67,25 @@ extension ContentView {
             if let index = locations.firstIndex(of: selectedPlace) {
                 locations[index] = location
                 save()
+            }
+        }
+        
+        func authenticate() {
+            let context = LAContext()
+            var error: NSError?
+            
+            if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+                let reason = "Please authenticate to unlock your places."
+                
+                context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
+                    if success {
+                        self.isUnlocked = true
+                    } else {
+                        // error
+                    }
+                }
+            } else {
+                // no biometrics
             }
         }
     }
