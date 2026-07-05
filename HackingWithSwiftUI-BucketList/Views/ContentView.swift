@@ -67,6 +67,11 @@ struct ContentView: View {
                         }
                     }
                 }
+                .alert("Unable to Unlock", isPresented: $viewModel.isShowingAuthenticationError) {
+                    Button("OK") { }
+                } message: {
+                    Text(viewModel.authenticationError)
+                }
                 .mapStyle(selectedMapStyle == "standard" ? .standard : .hybrid)
                 /// Picker View to select the MapStyle to be used.
                 Picker("Map Mode", selection: $selectedMapStyle) {

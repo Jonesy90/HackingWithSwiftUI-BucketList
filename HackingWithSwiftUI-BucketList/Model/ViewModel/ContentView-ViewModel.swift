@@ -23,6 +23,9 @@ extension ContentView {
         
         var isUnlocked = false
         
+        var authenticationError = "Unknown Error"
+        var isShowingAuthenticationError = false
+        
         /// As soon as the ViewModel is created, it tries to load previous saved data from disk. If no data is available, it will start with an empty array.
         init() {
             do {
@@ -84,11 +87,13 @@ extension ContentView {
                     if success {
                         self.isUnlocked = true
                     } else {
-                        // error
+                        self.authenticationError = "There was a problem authenticating you; please try again."
+                        self.isShowingAuthenticationError = true
                     }
                 }
             } else {
-                // no biometrics
+                self.authenticationError = "Sorry, your device does not support biometric authentication."
+                self.isShowingAuthenticationError = true
             }
         }
     }
