@@ -17,7 +17,7 @@ struct ContentView: View {
     /// Defines the initial camera position for a map view, which determines what part of the world is visible when the map first appears.
     let startPosition = MapCameraPosition.region(
         MKCoordinateRegion(
-            /// Creates a coordinate object for the center of the map.
+            /// Creates a coordinate object for the centre of the map.
             center: CLLocationCoordinate2D(
                 latitude: 56,
                 longitude: -3
@@ -80,6 +80,10 @@ struct ContentView: View {
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
+                
+                Button("Clear Places") {
+                    viewModel.removeAllLocation()
+                }
             }
         } else {
             Button("Unlock Places", action: viewModel.authenticate)

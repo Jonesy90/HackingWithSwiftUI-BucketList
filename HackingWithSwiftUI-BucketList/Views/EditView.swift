@@ -8,47 +8,31 @@
 import SwiftUI
 
 struct EditView: View {
-    enum LoadingState {
-        case loading, loaded, failed
-    }
+    @State private var viewModel: ViewModel
     
     @Environment(\.dismiss) var dismiss
-    
-    var location: Location
-    
-    @State private var name: String
-    @State private var description: String
-    
     var onSave: (Location) -> Void
-    
-    @State private var loadingState: LoadingState = .loading
-    @State private var pages = [Page]()
     
     /// Lets the view display and edit the name and description of a location and ensures the fields are tracked with SwiftUI's reactive state system.
     init(location: Location, onSave: @escaping (Location) -> Void) {
-        self.location = location
         self.onSave = onSave
-        
-        /// Sets up the state variable name (@State property) with an initial value taken from location.name or location.description.
-        /// The underscore (_name) access the property wrapper storage directly, which is the correct way to initialise @State properties inside a custom initialiser.
-        _name = State(initialValue: location.name)
-        _description = State(initialValue: location.description)
+        _viewModel = State(initialValue: ViewModel(location: location))
     }
     
     var body: some View {
         NavigationStack {
             Form {
                 Section() {
-                    TextField("Place Name", text: $name)
-                    TextField("Place Description", text: $description)
+                    TextField("Place Name", text: $viewModel.name)
+                    TextField("Place Description", text: $viewModel.description)
                 }
                 
                 Section("Nearby...") {
-                    switch loadingState {
+                    switch viewModel.loadingState {
                     case .loading:
                         Text("Loading...")
                     case .loaded:
-                        ForEach(pages, id: \.pageid) { page in
+                        ForEach(viewModel.pages, id: \.pageid) { page in
                             Text("\(Text(page.title).font(.headline)): \(Text(page.description).italic())")
                         }
                     case .failed:
@@ -62,13 +46,8 @@ struct EditView: View {
             }
             .toolbar {
                 Button("Save") {
-                    var newLocation = location
-                    newLocation.id = UUID()
-                    newLocation.name = name
-                    newLocation.description = description
-                    
+                    let newLocation = viewModel.createNewLocation()
                     onSave(newLocation)
-                    
                     dismiss()
                 }
             }
@@ -77,7 +56,7 @@ struct EditView: View {
     
     /// Fetches nearby pages based on the geographic location (latitude and longitude). It updates the views state to reflect the progress and results of the network request.
     private func fetchNearbyPlaces() async {
-        let urlString = "https://en.wikipedia.org/w/api.php?ggscoord=\(location.latitude)%7C\(location.longitude)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
+        let urlString = "https://en.wikipedia.org/w/api.php?ggscoord=\(viewModel.location.latitude)%7C\(viewModel.location.longitude)&action=query&prop=coordinates%7Cpageimages%7Cpageterms&colimit=50&piprop=thumbnail&pithumbsize=500&pilimit=50&wbptterms=description&generator=geosearch&ggsradius=10000&ggslimit=50&format=json"
         
         guard let url = URL(string: urlString) else {
             print("Bad URL\(urlString)")
@@ -87,10 +66,10 @@ struct EditView: View {
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             let items = try JSONDecoder().decode(Result.self, from: data)
-            pages = items.query.pages.values.sorted()
-            loadingState = .loaded
+            viewModel.pages = items.query.pages.values.sorted()
+            viewModel.loadingState = .loaded
         } catch {
-            loadingState = .failed
+            viewModel.loadingState = .failed
         }
     }
 }
