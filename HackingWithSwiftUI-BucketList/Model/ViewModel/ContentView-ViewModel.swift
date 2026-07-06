@@ -96,5 +96,10 @@ extension ContentView {
                 self.isShowingAuthenticationError = true
             }
         }
+        
+        func removeAllLocation() {
+            locations.removeAll()
+            save()
+        }
     }
 }
